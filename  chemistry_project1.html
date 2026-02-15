@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChemLab - Interactive Periodic Table</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #fef6e4;
+            --bg-secondary: #f3d2c1;
+            --bg-card: #ffffff;
+            --text-primary: #001858;
+            --text-secondary: #172c66;
+            --border: #8bd3dd;
+            
+            /* Flame test colors - vibrant and saturated */
+            --flame-lithium: #ff006e;
+            --flame-sodium: #ffbe0b;
+            --flame-potassium: #d896ff;
+            --flame-copper: #06ffa5;
+            --flame-calcium: #fb5607;
+            --flame-barium: #90e0ef;
+            --flame-strontium: #ef476f;
+            --flame-boron: #3a86ff;
+            
+            /* Category colors */
+            --alkali: linear-gradient(135deg, #ff006e 0%, #d90368 100%);
+            --alkaline: linear-gradient(135deg, #ffbe0b 0%, #fb8500 100%);
+            --transition: linear-gradient(135deg, #06ffa5 0%, #00d9ff 100%);
+            --post: linear-gradient(135deg, #fb5607 0%, #ff006e 100%);
+            --metalloid: linear-gradient(135deg, #d896ff 0%, #8338ec 100%);
+            --nonmetal: linear-gradient(135deg, #90e0ef 0%, #0077b6 100%);
+            --halogen: linear-gradient(135deg, #ef476f 0%, #f72585 100%);
+            --noble: linear-gradient(135deg, #3a86ff 0%, #4361ee 100%);
+            --lanthanide: linear-gradient(135deg, #ffd60a 0%, #fca311 100%);
+            --actinide: linear-gradient(135deg, #e63946 0%, #a4133c 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Hexagonal chemistry background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-primary);
+            background-image: 
+                radial-gradient(circle at 25% 25%, rgba(6, 255, 165, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 75% 75%, rgba(255, 0, 110, 0.06) 0%, transparent 40%),
+                radial-gradient(circle at 50% 50%, rgba(255, 190, 11, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Hexagonal molecular pattern */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(139, 211, 221, 0.05) 50px, rgba(139, 211, 221, 0.05) 51px),
+                repeating-linear-gradient(60deg, transparent, transparent 50px, rgba(251, 86, 7, 0.04) 50px, rgba(251, 86, 7, 0.04) 51px),
+                repeating-linear-gradient(120deg, transparent, transparent 50px, rgba(255, 190, 11, 0.03) 50px, rgba(255, 190, 11, 0.03) 51px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 60px 30px;
+        }
+
+        /* Decorative chemistry formulas */
+        .container::before {
+            content: 'H₂O • CO₂ • NaCl • CH₄ • O₂ • N₂ • C₆H₁₂O₆';
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-3deg);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 120px;
+            font-weight: 700;
+            color: rgba(139, 211, 221, 0.03);
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: -1;
+            letter-spacing: 40px;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 80px;
+            position: relative;
+        }
+
+        .main-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 96px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            letter-spacing: -4px;
+            position: relative;
+            display: inline-block;
+            animation: titleReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            transform-origin: center;
+        }
+
+        @keyframes titleReveal {
+            0% {
+                opacity: 0;
+                transform: scale(0.8) translateY(40px);
+                filter: blur(10px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+                filter: blur(0);
+            }
+        }
+
+        .main-title::before {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: var(--transition);
+            border-radius: 4px;
+            transform: scaleX(0);
+            animation: underlineGrow 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.6s forwards;
+        }
+
+        @keyframes underlineGrow {
+            to { transform: scaleX(1); }
+        }
+
+        .subtitle {
+            font-family: 'Syne', sans-serif;
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease 0.4s forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 60px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease 0.8s forwards;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+            max-width: 500px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 18px 28px;
+            background: var(--bg-card);
+            border: 3px solid var(--border);
+            border-radius: 16px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 20px rgba(139, 211, 221, 0.2);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--flame-copper);
+            box-shadow: 0 8px 32px rgba(6, 255, 165, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.5;
+        }
+
+        .category-filter {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 14px 28px;
+            background: var(--bg-card);
+            border: 3px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'Syne', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .filter-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--transition);
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: -1;
+        }
+
+        .filter-btn:hover::before,
+        .filter-btn.active::before {
+            transform: translateY(0);
+        }
+
+        .filter-btn:hover,
+        .filter-btn.active {
+            border-color: var(--flame-copper);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(6, 255, 165, 0.3);
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 50px;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 32px;
+            background: var(--bg-card);
+            border-radius: 24px;
+            border: 3px solid var(--border);
+            box-shadow: 0 8px 32px rgba(139, 211, 221, 0.2);
+            opacity: 0;
+            animation: fadeInUp 0.8s ease 1s forwards;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: 'Syne', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .legend-color {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            border: 2px solid var(--text-primary);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Periodic Table */
+        .periodic-table {
+            display: grid;
+            grid-template-columns: repeat(18, 1fr);
+            gap: 6px;
+            margin-bottom: 60px;
+        }
+
+        .element {
+            aspect-ratio: 1;
+            background: var(--bg-card);
+            border: 3px solid var(--text-primary);
+            border-radius: 12px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            opacity: 0;
+            transform: scale(0.6) rotate(-5deg);
+            box-shadow: 4px 4px 0 var(--text-primary);
+        }
+
+        .element.revealed {
+            opacity: 1;
+            transform: scale(1) rotate(0);
+        }
+
+        .element:hover {
+            transform: scale(1.15) rotate(2deg) translateY(-8px);
+            box-shadow: 8px 8px 0 var(--text-primary);
+            z-index: 100;
+        }
+
+        .element:active {
+            transform: scale(1.05) rotate(0deg);
+            box-shadow: 2px 2px 0 var(--text-primary);
+        }
+
+        .atomic-number {
+            font-family: 'Syne', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .element-symbol {
+            font-family: 'Syne', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            text-align: center;
+            margin: 6px 0;
+            color: var(--text-primary);
+        }
+
+        .element-name {
+            font-size: 9px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .atomic-mass {
+            font-size: 9px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        /* Category colors */
+        .alkali-metal { background: var(--alkali); color: white; border-color: var(--flame-lithium); }
+        .alkali-metal .atomic-number,
+        .alkali-metal .element-symbol,
+        .alkali-metal .element-name,
+        .alkali-metal .atomic-mass { color: white; }
+
+        .alkaline-earth { background: var(--alkaline); color: var(--text-primary); border-color: var(--flame-sodium); }
+
+        .transition-metal { background: var(--transition); color: var(--text-primary); border-color: var(--flame-copper); }
+
+        .post-transition { background: var(--post); color: white; border-color: var(--flame-calcium); }
+        .post-transition .atomic-number,
+        .post-transition .element-symbol,
+        .post-transition .element-name,
+        .post-transition .atomic-mass { color: white; }
+
+        .metalloid { background: var(--metalloid); color: white; border-color: var(--flame-potassium); }
+        .metalloid .atomic-number,
+        .metalloid .element-symbol,
+        .metalloid .element-name,
+        .metalloid .atomic-mass { color: white; }
+
+        .nonmetal { background: var(--nonmetal); color: var(--text-primary); border-color: var(--flame-barium); }
+
+        .halogen { background: var(--halogen); color: white; border-color: var(--flame-strontium); }
+        .halogen .atomic-number,
+        .halogen .element-symbol,
+        .halogen .element-name,
+        .halogen .atomic-mass { color: white; }
+
+        .noble-gas { background: var(--noble); color: white; border-color: var(--flame-boron); }
+        .noble-gas .atomic-number,
+        .noble-gas .element-symbol,
+        .noble-gas .element-name,
+        .noble-gas .atomic-mass { color: white; }
+
+        .lanthanide { background: var(--lanthanide); color: var(--text-primary); border-color: var(--flame-sodium); }
+
+        .actinide { background: var(--actinide); color: white; border-color: var(--flame-strontium); }
+        .actinide .atomic-number,
+        .actinide .element-symbol,
+        .actinide .element-name,
+        .actinide .atomic-mass { color: white; }
+
+        /* Empty cells */
+        .empty {
+            background: transparent;
+            border: none;
+            cursor: default;
+            box-shadow: none;
+        }
+
+        .empty:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .series-separator {
+            grid-column: 1 / -1;
+            height: 30px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(254, 246, 228, 0.95);
+            backdrop-filter: blur(20px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border: 4px solid var(--text-primary);
+            border-radius: 32px;
+            max-width: 1000px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 16px 16px 0 var(--text-primary);
+            transform: scale(0.8) rotate(-3deg);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1) rotate(0);
+        }
+
+        .modal-header {
+            padding: 50px;
+            border-bottom: 3px solid var(--border);
+            position: relative;
+            background: linear-gradient(135deg, rgba(139, 211, 221, 0.1) 0%, rgba(251, 86, 7, 0.05) 100%);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            background: var(--text-primary);
+            border: none;
+            color: var(--bg-primary);
+            font-size: 32px;
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            cursor: pointer;
+            width: 56px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 14px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 4px 4px 0 var(--border);
+        }
+
+        .close-modal:hover {
+            transform: rotate(90deg) scale(1.1);
+            box-shadow: 6px 6px 0 var(--border);
+        }
+
+        .close-modal:active {
+            transform: rotate(90deg) scale(0.95);
+            box-shadow: 2px 2px 0 var(--border);
+        }
+
+        .modal-element-header {
+            display: flex;
+            gap: 48px;
+            align-items: center;
+        }
+
+        .modal-element-symbol {
+            font-family: 'Syne', sans-serif;
+            font-size: 96px;
+            font-weight: 800;
+            width: 160px;
+            height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 24px;
+            position: relative;
+            border: 4px solid var(--text-primary);
+            box-shadow: 8px 8px 0 var(--text-primary);
+        }
+
+        .modal-element-number {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .modal-element-info h2 {
+            font-family: 'Syne', sans-serif;
+            font-size: 56px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            letter-spacing: -2px;
+        }
+
+        .modal-element-category {
+            font-family: 'Syne', sans-serif;
+            font-size: 16px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .modal-quick-facts {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 28px;
+        }
+
+        .quick-fact {
+            background: var(--bg-primary);
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+            border: 3px solid var(--border);
+            box-shadow: 4px 4px 0 var(--text-primary);
+        }
+
+        .quick-fact-label {
+            font-family: 'Syne', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .quick-fact-value {
+            font-family: 'Syne', sans-serif;
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 50px;
+        }
+
+        .info-section {
+            margin-bottom: 40px;
+        }
+
+        .info-section h3 {
+            font-family: 'Syne', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .info-item {
+            background: var(--bg-primary);
+            padding: 24px;
+            border-radius: 16px;
+            border: 3px solid var(--border);
+            box-shadow: 4px 4px 0 var(--text-primary);
+        }
+
+        .info-label {
+            font-family: 'Syne', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .info-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .electron-config {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-primary);
+            padding: 24px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            border: 3px solid var(--border);
+            box-shadow: 4px 4px 0 var(--text-primary);
+            color: var(--text-primary);
+        }
+
+        .uses-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .uses-list li {
+            background: var(--bg-primary);
+            padding: 18px 24px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border: 3px solid var(--border);
+            box-shadow: 4px 4px 0 var(--text-primary);
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .uses-list li:hover {
+            transform: translateX(8px);
+            box-shadow: 6px 6px 0 var(--text-primary);
+        }
+
+        .uses-list li::before {
+            content: '→';
+            margin-right: 12px;
+            color: var(--flame-copper);
+            font-weight: 800;
+            font-size: 20px;
+        }
+
+        @media (max-width: 1400px) {
+            .periodic-table {
+                grid-template-columns: repeat(18, minmax(50px, 1fr));
+                gap: 4px;
+            }
+
+            .element {
+                padding: 6px;
+            }
+
+            .element-symbol {
+                font-size: 20px;
+            }
+
+            .element-name, .atomic-mass {
+                font-size: 8px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-title {
+                font-size: 56px;
+            }
+
+            .modal-element-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .info-grid, .modal-quick-facts {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Scroll animations */
+        @keyframes slideInElement {
+            from {
+                opacity: 0;
+                transform: scale(0.6) rotate(-5deg);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) rotate(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1 class="main-title">ChemLab</h1>
+            <p class="subtitle">Interactive Elements</p>
+        </header>
+
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search by name (e.g., Gold), symbol (Au), or number (79)...">
+            </div>
+            <div class="category-filter">
+                <button class="filter-btn active" onclick="filterCategory('all')">All</button>
+                <button class="filter-btn" onclick="filterCategory('metal')">Metals</button>
+                <button class="filter-btn" onclick="filterCategory('nonmetal')">Non-Metals</button>
+                <button class="filter-btn" onclick="filterCategory('metalloid')">Metalloids</button>
+            </div>
+        </div>
+
+        <div class="legend" id="legend"></div>
+        <div class="periodic-table" id="periodicTable"></div>
+        
+        <div style="text-align: center; margin-top: 40px; padding: 20px; background: var(--bg-card); border-radius: 16px; border: 3px solid var(--border); font-family: 'Syne', sans-serif; font-weight: 700;">
+            <span style="color: var(--text-secondary);">Total Elements:</span> 
+            <span id="elementCount" style="color: var(--text-primary); font-size: 24px;">118</span>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal()">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <button class="close-modal" onclick="closeModal()">×</button>
+                <div class="modal-element-header" id="modalHeader"></div>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        const elements = [
+            { number: 1, symbol: 'H', name: 'Hydrogen', mass: 1.008, category: 'nonmetal', group: 1, period: 1, config: '1s¹', discovered: '1766', discoverer: 'Henry Cavendish', state: 'Gas', melt: -259.14, boil: -252.87, uses: ['Fuel cells', 'Rocket fuel', 'Ammonia production'] },
+            { number: 2, symbol: 'He', name: 'Helium', mass: 4.003, category: 'noble-gas', group: 18, period: 1, config: '1s²', discovered: '1868', discoverer: 'Pierre Janssen', state: 'Gas', melt: -272.2, boil: -268.93, uses: ['Balloons', 'Deep-sea diving', 'MRI scanners'] },
+            { number: 3, symbol: 'Li', name: 'Lithium', mass: 6.941, category: 'alkali-metal', group: 1, period: 2, config: '[He] 2s¹', discovered: '1817', discoverer: 'Johan August Arfwedson', state: 'Solid', melt: 180.54, boil: 1342, uses: ['Batteries', 'Ceramics', 'Mood stabilizers'] },
+            { number: 4, symbol: 'Be', name: 'Beryllium', mass: 9.012, category: 'alkaline-earth', group: 2, period: 2, config: '[He] 2s²', discovered: '1798', discoverer: 'Louis Nicolas Vauquelin', state: 'Solid', melt: 1287, boil: 2469, uses: ['Aerospace alloys', 'X-ray windows', 'Nuclear reactors'] },
+            { number: 5, symbol: 'B', name: 'Boron', mass: 10.811, category: 'metalloid', group: 13, period: 2, config: '[He] 2s² 2p¹', discovered: '1808', discoverer: 'Humphry Davy', state: 'Solid', melt: 2075, boil: 4000, uses: ['Glass manufacturing', 'Semiconductors', 'Detergents'] },
+            { number: 6, symbol: 'C', name: 'Carbon', mass: 12.011, category: 'nonmetal', group: 14, period: 2, config: '[He] 2s² 2p²', discovered: 'Ancient', discoverer: 'Known to ancients', state: 'Solid', melt: 3550, boil: 4027, uses: ['Organic compounds', 'Steel production', 'Diamond & graphite'] },
+            { number: 7, symbol: 'N', name: 'Nitrogen', mass: 14.007, category: 'nonmetal', group: 15, period: 2, config: '[He] 2s² 2p³', discovered: '1772', discoverer: 'Daniel Rutherford', state: 'Gas', melt: -210.1, boil: -195.79, uses: ['Fertilizers', 'Food preservation', 'Liquid nitrogen cooling'] },
+            { number: 8, symbol: 'O', name: 'Oxygen', mass: 15.999, category: 'nonmetal', group: 16, period: 2, config: '[He] 2s² 2p⁴', discovered: '1774', discoverer: 'Joseph Priestley', state: 'Gas', melt: -218.79, boil: -182.95, uses: ['Respiration', 'Combustion', 'Medical applications'] },
+            { number: 9, symbol: 'F', name: 'Fluorine', mass: 18.998, category: 'halogen', group: 17, period: 2, config: '[He] 2s² 2p⁵', discovered: '1886', discoverer: 'Henri Moissan', state: 'Gas', melt: -219.62, boil: -188.12, uses: ['Toothpaste', 'Teflon', 'Uranium enrichment'] },
+            { number: 10, symbol: 'Ne', name: 'Neon', mass: 20.180, category: 'noble-gas', group: 18, period: 2, config: '[He] 2s² 2p⁶', discovered: '1898', discoverer: 'William Ramsay', state: 'Gas', melt: -248.59, boil: -246.08, uses: ['Neon signs', 'Lasers', 'Cryogenic refrigerant'] },
+            { number: 11, symbol: 'Na', name: 'Sodium', mass: 22.990, category: 'alkali-metal', group: 1, period: 3, config: '[Ne] 3s¹', discovered: '1807', discoverer: 'Humphry Davy', state: 'Solid', melt: 97.72, boil: 883, uses: ['Table salt', 'Soap production', 'Street lamps'] },
+            { number: 12, symbol: 'Mg', name: 'Magnesium', mass: 24.305, category: 'alkaline-earth', group: 2, period: 3, config: '[Ne] 3s²', discovered: '1755', discoverer: 'Joseph Black', state: 'Solid', melt: 650, boil: 1090, uses: ['Alloys', 'Fireworks', 'Flash photography'] },
+            { number: 13, symbol: 'Al', name: 'Aluminum', mass: 26.982, category: 'post-transition', group: 13, period: 3, config: '[Ne] 3s² 3p¹', discovered: '1825', discoverer: 'Hans Christian Ørsted', state: 'Solid', melt: 660.32, boil: 2519, uses: ['Packaging', 'Aircraft construction', 'Electrical transmission'] },
+            { number: 14, symbol: 'Si', name: 'Silicon', mass: 28.086, category: 'metalloid', group: 14, period: 3, config: '[Ne] 3s² 3p²', discovered: '1824', discoverer: 'Jöns Jacob Berzelius', state: 'Solid', melt: 1414, boil: 3265, uses: ['Semiconductors', 'Computer chips', 'Solar cells'] },
+            { number: 15, symbol: 'P', name: 'Phosphorus', mass: 30.974, category: 'nonmetal', group: 15, period: 3, config: '[Ne] 3s² 3p³', discovered: '1669', discoverer: 'Hennig Brand', state: 'Solid', melt: 44.15, boil: 280.5, uses: ['Fertilizers', 'Matches', 'Detergents'] },
+            { number: 16, symbol: 'S', name: 'Sulfur', mass: 32.065, category: 'nonmetal', group: 16, period: 3, config: '[Ne] 3s² 3p⁴', discovered: 'Ancient', discoverer: 'Known to ancients', state: 'Solid', melt: 115.21, boil: 444.72, uses: ['Sulfuric acid', 'Vulcanizing rubber', 'Gunpowder'] },
+            { number: 17, symbol: 'Cl', name: 'Chlorine', mass: 35.453, category: 'halogen', group: 17, period: 3, config: '[Ne] 3s² 3p⁵', discovered: '1774', discoverer: 'Carl Wilhelm Scheele', state: 'Gas', melt: -101.5, boil: -34.04, uses: ['Water purification', 'PVC production', 'Bleach'] },
+            { number: 18, symbol: 'Ar', name: 'Argon', mass: 39.948, category: 'noble-gas', group: 18, period: 3, config: '[Ne] 3s² 3p⁶', discovered: '1894', discoverer: 'Lord Rayleigh', state: 'Gas', melt: -189.35, boil: -185.85, uses: ['Welding', 'Light bulbs', 'Preserving documents'] },
+            { number: 19, symbol: 'K', name: 'Potassium', mass: 39.098, category: 'alkali-metal', group: 1, period: 4, config: '[Ar] 4s¹', discovered: '1807', discoverer: 'Humphry Davy', state: 'Solid', melt: 63.5, boil: 759, uses: ['Fertilizers', 'Soap', 'Nutrition'] },
+            { number: 20, symbol: 'Ca', name: 'Calcium', mass: 40.078, category: 'alkaline-earth', group: 2, period: 4, config: '[Ar] 4s²', discovered: '1808', discoverer: 'Humphry Davy', state: 'Solid', melt: 842, boil: 1484, uses: ['Construction materials', 'Bone health', 'Steel production'] },
+            { number: 21, symbol: 'Sc', name: 'Scandium', mass: 44.956, category: 'transition-metal', group: 3, period: 4, config: '[Ar] 3d¹ 4s²', discovered: '1879', discoverer: 'Lars Fredrik Nilson', state: 'Solid', melt: 1541, boil: 2836, uses: ['Aerospace alloys', 'Mercury vapor lamps', 'Baseball bats'] },
+            { number: 22, symbol: 'Ti', name: 'Titanium', mass: 47.867, category: 'transition-metal', group: 4, period: 4, config: '[Ar] 3d² 4s²', discovered: '1791', discoverer: 'William Gregor', state: 'Solid', melt: 1668, boil: 3287, uses: ['Aircraft', 'Medical implants', 'White pigment'] },
+            { number: 23, symbol: 'V', name: 'Vanadium', mass: 50.942, category: 'transition-metal', group: 5, period: 4, config: '[Ar] 3d³ 4s²', discovered: '1801', discoverer: 'Andrés Manuel del Río', state: 'Solid', melt: 1910, boil: 3407, uses: ['Steel alloys', 'Tool manufacturing', 'Catalysts'] },
+            { number: 24, symbol: 'Cr', name: 'Chromium', mass: 51.996, category: 'transition-metal', group: 6, period: 4, config: '[Ar] 3d⁵ 4s¹', discovered: '1797', discoverer: 'Louis Nicolas Vauquelin', state: 'Solid', melt: 1907, boil: 2671, uses: ['Stainless steel', 'Chrome plating', 'Dyes'] },
+            { number: 25, symbol: 'Mn', name: 'Manganese', mass: 54.938, category: 'transition-metal', group: 7, period: 4, config: '[Ar] 3d⁵ 4s²', discovered: '1774', discoverer: 'Johan Gottlieb Gahn', state: 'Solid', melt: 1246, boil: 2061, uses: ['Steel production', 'Batteries', 'Fertilizers'] },
+            { number: 26, symbol: 'Fe', name: 'Iron', mass: 55.845, category: 'transition-metal', group: 8, period: 4, config: '[Ar] 3d⁶ 4s²', discovered: 'Ancient', discoverer: 'Known to ancients', state: 'Solid', melt: 1538, boil: 2861, uses: ['Construction', 'Automobiles', 'Hemoglobin'] },
+            { number: 27, symbol: 'Co', name: 'Cobalt', mass: 58.933, category: 'transition-metal', group: 9, period: 4, config: '[Ar] 3d⁷ 4s²', discovered: '1735', discoverer: 'Georg Brandt', state: 'Solid', melt: 1495, boil: 2927, uses: ['Magnets', 'Blue pigments', 'Batteries'] },
+            { number: 28, symbol: 'Ni', name: 'Nickel', mass: 58.693, category: 'transition-metal', group: 10, period: 4, config: '[Ar] 3d⁸ 4s²', discovered: '1751', discoverer: 'Axel Fredrik Cronstedt', state: 'Solid', melt: 1455, boil: 2913, uses: ['Stainless steel', 'Coins', 'Batteries'] },
+            { number: 29, symbol: 'Cu', name: 'Copper', mass: 63.546, category: 'transition-metal', group: 11, period: 4, config: '[Ar] 3d¹⁰ 4s¹', discovered: 'Ancient', discoverer: 'Known to ancients', state: 'Solid', melt: 1084.62, boil: 2562, uses: ['Electrical wiring', 'Plumbing', 'Electronics'] },
+            { number: 30, symbol: 'Zn', name: 'Zinc', mass: 65.380, category: 'transition-metal', group: 12, period: 4, config: '[Ar] 3d¹⁰ 4s²', discovered: '1746', discoverer: 'Andreas Marggraf', state: 'Solid', melt: 419.53, boil: 907, uses: ['Galvanizing steel', 'Batteries', 'Nutrition'] },
+            { number: 31, symbol: 'Ga', name: 'Gallium', mass: 69.723, category: 'post-transition', group: 13, period: 4, config: '[Ar] 3d¹⁰ 4s² 4p¹', discovered: '1875', discoverer: 'Paul Émile Lecoq de Boisbaudran', state: 'Solid', melt: 29.76, boil: 2204, uses: ['Semiconductors', 'LEDs', 'Solar panels'] },
+            { number: 32, symbol: 'Ge', name: 'Germanium', mass: 72.640, category: 'metalloid', group: 14, period: 4, config: '[Ar] 3d¹⁰ 4s² 4p²', discovered: '1886', discoverer: 'Clemens Winkler', state: 'Solid', melt: 938.25, boil: 2833, uses: ['Fiber optics', 'Transistors', 'Infrared optics'] },
+            { number: 33, symbol: 'As', name: 'Arsenic', mass: 74.922, category: 'metalloid', group: 15, period: 4, config: '[Ar] 3d¹⁰ 4s² 4p³', discovered: 'Ancient', discoverer: 'Albertus Magnus', state: 'Solid', melt: 817, boil: 614, uses: ['Wood preservatives', 'Semiconductors', 'Pesticides'] },
+            { number: 34, symbol: 'Se', name: 'Selenium', mass: 78.960, category: 'nonmetal', group: 16, period: 4, config: '[Ar] 3d¹⁰ 4s² 4p⁴', discovered: '1817', discoverer: 'Jöns Jacob Berzelius', state: 'Solid', melt: 221, boil: 685, uses: ['Glass manufacturing', 'Photocells', 'Nutrition'] },
+            { number: 35, symbol: 'Br', name: 'Bromine', mass: 79.904, category: 'halogen', group: 17, period: 4, config: '[Ar] 3d¹⁰ 4s² 4p⁵', discovered: '1826', discoverer: 'Antoine Jérôme Balard', state: 'Liquid', melt: -7.2, boil: 58.8, uses: ['Flame retardants', 'Water purification', 'Photography'] },
+            { number: 36, symbol: 'Kr', name: 'Krypton', mass: 83.798, category: 'noble-gas', group: 18, period: 4, config: '[Ar] 3d¹⁰ 4s² 4p⁶', discovered: '1898', discoverer: 'William Ramsay', state: 'Gas', melt: -157.36, boil: -153.22, uses: ['Lasers', 'Photography flash', 'Energy-efficient windows'] },
+            { number: 37, symbol: 'Rb', name: 'Rubidium', mass: 85.468, category: 'alkali-metal', group: 1, period: 5, config: '[Kr] 5s¹', discovered: '1861', discoverer: 'Robert Bunsen', state: 'Solid', melt: 39.31, boil: 688, uses: ['Atomic clocks', 'Photocells', 'Research'] },
+            { number: 38, symbol: 'Sr', name: 'Strontium', mass: 87.620, category: 'alkaline-earth', group: 2, period: 5, config: '[Kr] 5s²', discovered: '1790', discoverer: 'William Cruickshank', state: 'Solid', melt: 777, boil: 1382, uses: ['Fireworks', 'Magnets', 'Toothpaste'] },
+            { number: 39, symbol: 'Y', name: 'Yttrium', mass: 88.906, category: 'transition-metal', group: 3, period: 5, config: '[Kr] 4d¹ 5s²', discovered: '1794', discoverer: 'Johan Gadolin', state: 'Solid', melt: 1526, boil: 3345, uses: ['LEDs', 'Superconductors', 'Cancer treatment'] },
+            { number: 40, symbol: 'Zr', name: 'Zirconium', mass: 91.224, category: 'transition-metal', group: 4, period: 5, config: '[Kr] 4d² 5s²', discovered: '1789', discoverer: 'Martin Heinrich Klaproth', state: 'Solid', melt: 1855, boil: 4409, uses: ['Nuclear reactors', 'Ceramics', 'Dental implants'] },
+            { number: 41, symbol: 'Nb', name: 'Niobium', mass: 92.906, category: 'transition-metal', group: 5, period: 5, config: '[Kr] 4d⁴ 5s¹', discovered: '1801', discoverer: 'Charles Hatchett', state: 'Solid', melt: 2477, boil: 4744, uses: ['Steel alloys', 'Superconductors', 'Jet engines'] },
+            { number: 42, symbol: 'Mo', name: 'Molybdenum', mass: 95.960, category: 'transition-metal', group: 6, period: 5, config: '[Kr] 4d⁵ 5s¹', discovered: '1778', discoverer: 'Carl Wilhelm Scheele', state: 'Solid', melt: 2623, boil: 4639, uses: ['Steel alloys', 'Lubricants', 'Catalysts'] },
+            { number: 43, symbol: 'Tc', name: 'Technetium', mass: 98, category: 'transition-metal', group: 7, period: 5, config: '[Kr] 4d⁵ 5s²', discovered: '1937', discoverer: 'Carlo Perrier', state: 'Solid', melt: 2157, boil: 4265, uses: ['Medical imaging', 'Corrosion inhibitor', 'Research'] },
+            { number: 44, symbol: 'Ru', name: 'Ruthenium', mass: 101.07, category: 'transition-metal', group: 8, period: 5, config: '[Kr] 4d⁷ 5s¹', discovered: '1844', discoverer: 'Karl Ernst Claus', state: 'Solid', melt: 2334, boil: 4150, uses: ['Catalysts', 'Electronics', 'Jewelry'] },
+            { number: 45, symbol: 'Rh', name: 'Rhodium', mass: 102.91, category: 'transition-metal', group: 9, period: 5, config: '[Kr] 4d⁸ 5s¹', discovered: '1803', discoverer: 'William Hyde Wollaston', state: 'Solid', melt: 1964, boil: 3695, uses: ['Catalytic converters', 'Jewelry', 'Mirrors'] },
+            { number: 46, symbol: 'Pd', name: 'Palladium', mass: 106.42, category: 'transition-metal', group: 10, period: 5, config: '[Kr] 4d¹⁰', discovered: '1803', discoverer: 'William Hyde Wollaston', state: 'Solid', melt: 1554.9, boil: 2963, uses: ['Catalytic converters', 'Electronics', 'Dentistry'] },
+            { number: 47, symbol: 'Ag', name: 'Silver', mass: 107.87, category: 'transition-metal', group: 11, period: 5, config: '[Kr] 4d¹⁰ 5s¹', discovered: 'Ancient', discoverer: 'Known to ancients', state: 'Solid', melt: 961.78, boil: 2162, uses: ['Jewelry', 'Photography', 'Antibacterial'] },
+            { number: 48, symbol: 'Cd', name: 'Cadmium', mass: 112.41, category: 'transition-metal', group: 12, period: 5, config: '[Kr] 4d¹⁰ 5s²', discovered: '1817', discoverer: 'Friedrich Stromeyer', state: 'Solid', melt: 321.07, boil: 767, uses: ['Batteries', 'Pigments', 'Coatings'] },
+            { number: 49, symbol: 'In', name: 'Indium', mass: 114.82, category: 'post-transition', group: 13, period: 5, config: '[Kr] 4d¹⁰ 5s² 5p¹', discovered: '1863', discoverer: 'Ferdinand Reich', state: 'Solid', melt: 156.6, boil: 2072, uses: ['LCD screens', 'Semiconductors', 'Solders'] },
+            { number: 50, symbol: 'Sn', name: 'Tin', mass: 118.71, category: 'post-transition', group: 14, period: 5, config: '[Kr] 4d¹⁰ 5s² 5p²', discovered: 'Ancient', discoverer: 'Known to ancients', state: 'Solid', melt: 231.93, boil: 2602, uses: ['Tin cans', 'Solders', 'Bronze'] },
+            { number: 51, symbol: 'Sb', name: 'Antimony', mass: 121.76, category: 'metalloid', group: 15, period: 5, config: '[Kr] 4d¹⁰ 5s² 5p³', discovered: 'Ancient', discoverer: 'Known to ancients', state: 'Solid', melt: 630.63, boil: 1587, uses: ['Flame retardants', 'Batteries', 'Semiconductors'] },
+            { number: 52, symbol: 'Te', name: 'Tellurium', mass: 127.60, category: 'metalloid', group: 16, period: 5, config: '[Kr] 4d¹⁰ 5s² 5p⁴', discovered: '1782', discoverer: 'Franz-Joseph Müller von Reichenstein', state: 'Solid', melt: 449.51, boil: 988, uses: ['Solar cells', 'Thermoelectric devices', 'Rubber vulcanization'] },
+            { number: 53, symbol: 'I', name: 'Iodine', mass: 126.90, category: 'halogen', group: 17, period: 5, config: '[Kr] 4d¹⁰ 5s² 5p⁵', discovered: '1811', discoverer: 'Bernard Courtois', state: 'Solid', melt: 113.7, boil: 184.3, uses: ['Disinfectant', 'Nutrition', 'Photography'] },
+            { number: 54, symbol: 'Xe', name: 'Xenon', mass: 131.29, category: 'noble-gas', group: 18, period: 5, config: '[Kr] 4d¹⁰ 5s² 5p⁶', discovered: '1898', discoverer: 'William Ramsay', state: 'Gas', melt: -111.75, boil: -108.1, uses: ['Flash lamps', 'Anesthesia', 'Ion engines'] },
+            { number: 55, symbol: 'Cs', name: 'Cesium', mass: 132.91, category: 'alkali-metal', group: 1, period: 6, config: '[Xe] 6s¹', discovered: '1860', discoverer: 'Robert Bunsen', state: 'Solid', melt: 28.44, boil: 671, uses: ['Atomic clocks', 'Drilling fluids', 'Photocells'] },
+            { number: 56, symbol: 'Ba', name: 'Barium', mass: 137.33, category: 'alkaline-earth', group: 2, period: 6, config: '[Xe] 6s²', discovered: '1808', discoverer: 'Humphry Davy', state: 'Solid', melt: 727, boil: 1870, uses: ['X-ray imaging', 'Fireworks', 'Drilling fluids'] },
+            { number: 57, symbol: 'La', name: 'Lanthanum', mass: 138.91, category: 'lanthanide', group: 3, period: 6, config: '[Xe] 5d¹ 6s²', discovered: '1839', discoverer: 'Carl Gustaf Mosander', state: 'Solid', melt: 918, boil: 3464, uses: ['Camera lenses', 'Lighting', 'Catalysts'] },
+            { number: 58, symbol: 'Ce', name: 'Cerium', mass: 140.12, category: 'lanthanide', group: 3, period: 6, config: '[Xe] 4f¹ 5d¹ 6s²', discovered: '1803', discoverer: 'Jöns Jacob Berzelius', state: 'Solid', melt: 798, boil: 3443, uses: ['Catalytic converters', 'Self-cleaning ovens', 'Glass polishing'] },
+            { number: 59, symbol: 'Pr', name: 'Praseodymium', mass: 140.91, category: 'lanthanide', group: 3, period: 6, config: '[Xe] 4f³ 6s²', discovered: '1885', discoverer: 'Carl Auer von Welsbach', state: 'Solid', melt: 931, boil: 3520, uses: ['Aircraft engines', 'Magnets', 'Studio lighting'] },
+            { number: 60, symbol: 'Nd', name: 'Neodymium', mass: 144.24, category: 'lanthanide', group: 3, period: 6, config: '[Xe] 4f⁴ 6s²', discovered: '1885', discoverer: 'Carl Auer von Welsbach', state: 'Solid', melt: 1021, boil: 3074, uses: ['Powerful magnets', 'Lasers', 'Electric motors'] },
+            { number: 61, symbol: 'Pm', name: 'Promethium', mass: 145, category: 'lanthanide', group: 3, period: 6, config: '[Xe] 4f⁵ 6s²', discovered: '1945', discoverer: 'Jacob Marinsky', state: 'Solid', melt: 1042, boil: 3000, uses: ['Nuclear batteries', 'Luminous paint', 'Research'] },
+            { number: 62, symbol: 'Sm', name: 'Samarium', mass: 150.36, category: 'lanthanide', group: 3, period: 6, config: '[Xe] 4f⁶ 6s²', discovered: '1879', discoverer: 'Paul Émile Lecoq de Boisbaudran', state: 'Solid', melt: 1072, boil: 1794, uses: ['Magnets', 'Nuclear reactors', 'Cancer treatment'] },
+            { number: 63, symbol: 'Eu', name: 'Europium', mass: 151.96, category: 'lanthanide', group: 3, period: 6, config: '[Xe] 4f⁷ 6s²', discovered: '1901', discoverer: 'Eugène-Anatole Demarçay', state: 'Solid', melt: 822, boil: 1527, uses: ['TV screens', 'Lasers', 'Fluorescent lamps'] },
+            { number: 64, symbol: 'Gd', name: 'Gadolinium', mass: 157.25, category: 'lanthanide', group: 3, period: 6, config: '[Xe] 4f⁷ 5d¹ 6s²', discovered: '1880', discoverer: 'Jean Charles Galissard de Marignac', state: 'Solid', melt: 1313, boil: 3273, uses: ['MRI contrast agent', 'Nuclear reactors', 'Magnets'] },
+            { number: 65, symbol: 'Tb', name: 'Terbium', mass: 158.93, category: 'lanthanide', group: 3, period: 6, config: '[Xe] 4f⁹ 6s²', discovered: '1843', discoverer: 'Carl Gustaf Mosander', state: 'Solid', melt: 1356, boil: 3230, uses: ['Fluorescent lamps', 'Magnets', 'Lasers'] },
+            { number: 66, symbol: 'Dy', name: 'Dysprosium', mass: 162.50, category: 'lanthanide', group: 3, period: 6, config: '[Xe] 4f¹⁰ 6s²', discovered: '1886', discoverer: 'Paul Émile Lecoq de Boisbaudran', state: 'Solid', melt: 1412, boil: 2567, uses: ['Magnets', 'Nuclear reactors', 'Data storage'] },
+            { number: 67, symbol: 'Ho', name: 'Holmium', mass: 164.93, category: 'lanthanide', group: 3, period: 6, config: '[Xe] 4f¹¹ 6s²', discovered: '1878', discoverer: 'Marc Delafontaine', state: 'Solid', melt: 1474, boil: 2700, uses: ['Lasers', 'Magnets', 'Nuclear reactors'] },
+            { number: 68, symbol: 'Er', name: 'Erbium', mass: 167.26, category: 'lanthanide', group: 3, period: 6, config: '[Xe] 4f¹² 6s²', discovered: '1843', discoverer: 'Carl Gustaf Mosander', state: 'Solid', melt: 1529, boil: 2868, uses: ['Fiber optics', 'Lasers', 'Nuclear technology'] },
+            { number: 69, symbol: 'Tm', name: 'Thulium', mass: 168.93, category: 'lanthanide', group: 3, period: 6, config: '[Xe] 4f¹³ 6s²', discovered: '1879', discoverer: 'Per Teodor Cleve', state: 'Solid', melt: 1545, boil: 1950, uses: ['Portable X-ray devices', 'Lasers', 'Research'] },
+            { number: 70, symbol: 'Yb', name: 'Ytterbium', mass: 173.05, category: 'lanthanide', group: 3, period: 6, config: '[Xe] 4f¹⁴ 6s²', discovered: '1878', discoverer: 'Jean Charles Galissard de Marignac', state: 'Solid', melt: 819, boil: 1196, uses: ['Atomic clocks', 'Lasers', 'Stress gauges'] },
+            { number: 71, symbol: 'Lu', name: 'Lutetium', mass: 174.97, category: 'lanthanide', group: 3, period: 6, config: '[Xe] 4f¹⁴ 5d¹ 6s²', discovered: '1907', discoverer: 'Georges Urbain', state: 'Solid', melt: 1663, boil: 3402, uses: ['PET scan detectors', 'Catalysts', 'Research'] },
+            { number: 72, symbol: 'Hf', name: 'Hafnium', mass: 178.49, category: 'transition-metal', group: 4, period: 6, config: '[Xe] 4f¹⁴ 5d² 6s²', discovered: '1923', discoverer: 'Dirk Coster', state: 'Solid', melt: 2233, boil: 4603, uses: ['Nuclear reactors', 'Microprocessors', 'Light bulb filaments'] },
+            { number: 73, symbol: 'Ta', name: 'Tantalum', mass: 180.95, category: 'transition-metal', group: 5, period: 6, config: '[Xe] 4f¹⁴ 5d³ 6s²', discovered: '1802', discoverer: 'Anders Gustaf Ekeberg', state: 'Solid', melt: 3017, boil: 5458, uses: ['Capacitors', 'Surgical implants', 'Jet engines'] },
+            { number: 74, symbol: 'W', name: 'Tungsten', mass: 183.84, category: 'transition-metal', group: 6, period: 6, config: '[Xe] 4f¹⁴ 5d⁴ 6s²', discovered: '1783', discoverer: 'Fausto and Juan José Elhuyar', state: 'Solid', melt: 3422, boil: 5555, uses: ['Light bulb filaments', 'Cutting tools', 'X-ray tubes'] },
+            { number: 75, symbol: 'Re', name: 'Rhenium', mass: 186.21, category: 'transition-metal', group: 7, period: 6, config: '[Xe] 4f¹⁴ 5d⁵ 6s²', discovered: '1925', discoverer: 'Walter Noddack', state: 'Solid', melt: 3186, boil: 5596, uses: ['Jet engines', 'Catalysts', 'Thermocouples'] },
+            { number: 76, symbol: 'Os', name: 'Osmium', mass: 190.23, category: 'transition-metal', group: 8, period: 6, config: '[Xe] 4f¹⁴ 5d⁶ 6s²', discovered: '1803', discoverer: 'Smithson Tennant', state: 'Solid', melt: 3033, boil: 5012, uses: ['Fountain pen tips', 'Electrical contacts', 'Fingerprint detection'] },
+            { number: 77, symbol: 'Ir', name: 'Iridium', mass: 192.22, category: 'transition-metal', group: 9, period: 6, config: '[Xe] 4f¹⁴ 5d⁷ 6s²', discovered: '1803', discoverer: 'Smithson Tennant', state: 'Solid', melt: 2446, boil: 4428, uses: ['Spark plugs', 'Crucibles', 'Pen tips'] },
+            { number: 78, symbol: 'Pt', name: 'Platinum', mass: 195.08, category: 'transition-metal', group: 10, period: 6, config: '[Xe] 4f¹⁴ 5d⁹ 6s¹', discovered: '1735', discoverer: 'Antonio de Ulloa', state: 'Solid', melt: 1768.3, boil: 3825, uses: ['Catalytic converters', 'Jewelry', 'Chemotherapy'] },
+            { number: 79, symbol: 'Au', name: 'Gold', mass: 196.97, category: 'transition-metal', group: 11, period: 6, config: '[Xe] 4f¹⁴ 5d¹⁰ 6s¹', discovered: 'Ancient', discoverer: 'Known to ancients', state: 'Solid', melt: 1064.18, boil: 2856, uses: ['Jewelry', 'Electronics', 'Investment'] },
+            { number: 80, symbol: 'Hg', name: 'Mercury', mass: 200.59, category: 'transition-metal', group: 12, period: 6, config: '[Xe] 4f¹⁴ 5d¹⁰ 6s²', discovered: 'Ancient', discoverer: 'Known to ancients', state: 'Liquid', melt: -38.83, boil: 356.73, uses: ['Thermometers', 'Dental amalgams', 'Fluorescent lamps'] },
+            { number: 81, symbol: 'Tl', name: 'Thallium', mass: 204.38, category: 'post-transition', group: 13, period: 6, config: '[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p¹', discovered: '1861', discoverer: 'William Crookes', state: 'Solid', melt: 304, boil: 1473, uses: ['Electronics', 'Infrared detectors', 'Medical imaging'] },
+            { number: 82, symbol: 'Pb', name: 'Lead', mass: 207.20, category: 'post-transition', group: 14, period: 6, config: '[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p²', discovered: 'Ancient', discoverer: 'Known to ancients', state: 'Solid', melt: 327.46, boil: 1749, uses: ['Batteries', 'Radiation shielding', 'Ammunition'] },
+            { number: 83, symbol: 'Bi', name: 'Bismuth', mass: 208.98, category: 'post-transition', group: 15, period: 6, config: '[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p³', discovered: 'Ancient', discoverer: 'Known to ancients', state: 'Solid', melt: 271.4, boil: 1564, uses: ['Cosmetics', 'Pharmaceuticals', 'Alloys'] },
+            { number: 84, symbol: 'Po', name: 'Polonium', mass: 209, category: 'metalloid', group: 16, period: 6, config: '[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁴', discovered: '1898', discoverer: 'Marie Curie', state: 'Solid', melt: 254, boil: 962, uses: ['Anti-static devices', 'Nuclear batteries', 'Research'] },
+            { number: 85, symbol: 'At', name: 'Astatine', mass: 210, category: 'halogen', group: 17, period: 6, config: '[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁵', discovered: '1940', discoverer: 'Dale R. Corson', state: 'Solid', melt: 302, boil: 337, uses: ['Cancer treatment', 'Research', 'Radiotracer'] },
+            { number: 86, symbol: 'Rn', name: 'Radon', mass: 222, category: 'noble-gas', group: 18, period: 6, config: '[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁶', discovered: '1900', discoverer: 'Friedrich Ernst Dorn', state: 'Gas', melt: -71, boil: -61.7, uses: ['Cancer treatment', 'Earthquake prediction', 'Research'] },
+            { number: 87, symbol: 'Fr', name: 'Francium', mass: 223, category: 'alkali-metal', group: 1, period: 7, config: '[Rn] 7s¹', discovered: '1939', discoverer: 'Marguerite Perey', state: 'Solid', melt: 27, boil: 677, uses: ['Research', 'Spectroscopy', 'Atomic structure studies'] },
+            { number: 88, symbol: 'Ra', name: 'Radium', mass: 226, category: 'alkaline-earth', group: 2, period: 7, config: '[Rn] 7s²', discovered: '1898', discoverer: 'Marie and Pierre Curie', state: 'Solid', melt: 700, boil: 1737, uses: ['Cancer treatment', 'Luminous paint', 'Research'] },
+            { number: 89, symbol: 'Ac', name: 'Actinium', mass: 227, category: 'actinide', group: 3, period: 7, config: '[Rn] 6d¹ 7s²', discovered: '1899', discoverer: 'André-Louis Debierne', state: 'Solid', melt: 1051, boil: 3198, uses: ['Radiation therapy', 'Neutron sources', 'Research'] },
+            { number: 90, symbol: 'Th', name: 'Thorium', mass: 232.04, category: 'actinide', group: 3, period: 7, config: '[Rn] 6d² 7s²', discovered: '1828', discoverer: 'Jöns Jacob Berzelius', state: 'Solid', melt: 1750, boil: 4788, uses: ['Nuclear reactors', 'Gas mantles', 'Welding rods'] },
+            { number: 91, symbol: 'Pa', name: 'Protactinium', mass: 231.04, category: 'actinide', group: 3, period: 7, config: '[Rn] 5f² 6d¹ 7s²', discovered: '1913', discoverer: 'Kasimir Fajans', state: 'Solid', melt: 1572, boil: 4027, uses: ['Research', 'Scientific studies', 'Nuclear chemistry'] },
+            { number: 92, symbol: 'U', name: 'Uranium', mass: 238.03, category: 'actinide', group: 3, period: 7, config: '[Rn] 5f³ 6d¹ 7s²', discovered: '1789', discoverer: 'Martin Heinrich Klaproth', state: 'Solid', melt: 1135, boil: 4131, uses: ['Nuclear fuel', 'Nuclear weapons', 'Radiation shielding'] },
+            { number: 93, symbol: 'Np', name: 'Neptunium', mass: 237, category: 'actinide', group: 3, period: 7, config: '[Rn] 5f⁴ 6d¹ 7s²', discovered: '1940', discoverer: 'Edwin McMillan', state: 'Solid', melt: 644, boil: 3902, uses: ['Nuclear research', 'Detectors', 'Scientific studies'] },
+            { number: 94, symbol: 'Pu', name: 'Plutonium', mass: 244, category: 'actinide', group: 3, period: 7, config: '[Rn] 5f⁶ 7s²', discovered: '1940', discoverer: 'Glenn T. Seaborg', state: 'Solid', melt: 640, boil: 3228, uses: ['Nuclear weapons', 'Nuclear reactors', 'Space batteries'] },
+            { number: 95, symbol: 'Am', name: 'Americium', mass: 243, category: 'actinide', group: 3, period: 7, config: '[Rn] 5f⁷ 7s²', discovered: '1944', discoverer: 'Glenn T. Seaborg', state: 'Solid', melt: 1176, boil: 2011, uses: ['Smoke detectors', 'Neutron sources', 'Research'] },
+            { number: 96, symbol: 'Cm', name: 'Curium', mass: 247, category: 'actinide', group: 3, period: 7, config: '[Rn] 5f⁷ 6d¹ 7s²', discovered: '1944', discoverer: 'Glenn T. Seaborg', state: 'Solid', melt: 1345, boil: 3110, uses: ['Plutonium production', 'Radioisotope generators', 'Research'] },
+            { number: 97, symbol: 'Bk', name: 'Berkelium', mass: 247, category: 'actinide', group: 3, period: 7, config: '[Rn] 5f⁹ 7s²', discovered: '1949', discoverer: 'Glenn T. Seaborg', state: 'Solid', melt: 1050, boil: 2627, uses: ['Research', 'Scientific studies', 'Element synthesis'] },
+            { number: 98, symbol: 'Cf', name: 'Californium', mass: 251, category: 'actinide', group: 3, period: 7, config: '[Rn] 5f¹⁰ 7s²', discovered: '1950', discoverer: 'Glenn T. Seaborg', state: 'Solid', melt: 900, boil: 1470, uses: ['Neutron sources', 'Cancer treatment', 'Oil well logging'] },
+            { number: 99, symbol: 'Es', name: 'Einsteinium', mass: 252, category: 'actinide', group: 3, period: 7, config: '[Rn] 5f¹¹ 7s²', discovered: '1952', discoverer: 'Albert Ghiorso', state: 'Solid', melt: 860, boil: 1130, uses: ['Research', 'Scientific studies', 'Element synthesis'] },
+            { number: 100, symbol: 'Fm', name: 'Fermium', mass: 257, category: 'actinide', group: 3, period: 7, config: '[Rn] 5f¹² 7s²', discovered: '1952', discoverer: 'Albert Ghiorso', state: 'Solid', melt: 1527, boil: null, uses: ['Research', 'Scientific studies', 'Element synthesis'] },
+            { number: 101, symbol: 'Md', name: 'Mendelevium', mass: 258, category: 'actinide', group: 3, period: 7, config: '[Rn] 5f¹³ 7s²', discovered: '1955', discoverer: 'Albert Ghiorso', state: 'Solid', melt: 827, boil: null, uses: ['Research', 'Scientific studies', 'Element synthesis'] },
+            { number: 102, symbol: 'No', name: 'Nobelium', mass: 259, category: 'actinide', group: 3, period: 7, config: '[Rn] 5f¹⁴ 7s²', discovered: '1958', discoverer: 'Albert Ghiorso', state: 'Solid', melt: 827, boil: null, uses: ['Research', 'Scientific studies', 'Element synthesis'] },
+            { number: 103, symbol: 'Lr', name: 'Lawrencium', mass: 262, category: 'actinide', group: 3, period: 7, config: '[Rn] 5f¹⁴ 7s² 7p¹', discovered: '1961', discoverer: 'Albert Ghiorso', state: 'Solid', melt: 1627, boil: null, uses: ['Research', 'Scientific studies', 'Element synthesis'] },
+            { number: 104, symbol: 'Rf', name: 'Rutherfordium', mass: 267, category: 'transition-metal', group: 4, period: 7, config: '[Rn] 5f¹⁴ 6d² 7s²', discovered: '1964', discoverer: 'Joint Institute', state: 'Solid', melt: null, boil: null, uses: ['Research', 'Scientific studies'] },
+            { number: 105, symbol: 'Db', name: 'Dubnium', mass: 268, category: 'transition-metal', group: 5, period: 7, config: '[Rn] 5f¹⁴ 6d³ 7s²', discovered: '1967', discoverer: 'Joint Institute', state: 'Solid', melt: null, boil: null, uses: ['Research', 'Scientific studies'] },
+            { number: 106, symbol: 'Sg', name: 'Seaborgium', mass: 271, category: 'transition-metal', group: 6, period: 7, config: '[Rn] 5f¹⁴ 6d⁴ 7s²', discovered: '1974', discoverer: 'Lawrence Berkeley Laboratory', state: 'Solid', melt: null, boil: null, uses: ['Research', 'Scientific studies'] },
+            { number: 107, symbol: 'Bh', name: 'Bohrium', mass: 272, category: 'transition-metal', group: 7, period: 7, config: '[Rn] 5f¹⁴ 6d⁵ 7s²', discovered: '1981', discoverer: 'GSI Helmholtz Centre', state: 'Solid', melt: null, boil: null, uses: ['Research', 'Scientific studies'] },
+            { number: 108, symbol: 'Hs', name: 'Hassium', mass: 270, category: 'transition-metal', group: 8, period: 7, config: '[Rn] 5f¹⁴ 6d⁶ 7s²', discovered: '1984', discoverer: 'GSI Helmholtz Centre', state: 'Solid', melt: null, boil: null, uses: ['Research', 'Scientific studies'] },
+            { number: 109, symbol: 'Mt', name: 'Meitnerium', mass: 276, category: 'transition-metal', group: 9, period: 7, config: '[Rn] 5f¹⁴ 6d⁷ 7s²', discovered: '1982', discoverer: 'GSI Helmholtz Centre', state: 'Solid', melt: null, boil: null, uses: ['Research', 'Scientific studies'] },
+            { number: 110, symbol: 'Ds', name: 'Darmstadtium', mass: 281, category: 'transition-metal', group: 10, period: 7, config: '[Rn] 5f¹⁴ 6d⁸ 7s²', discovered: '1994', discoverer: 'GSI Helmholtz Centre', state: 'Solid', melt: null, boil: null, uses: ['Research', 'Scientific studies'] },
+            { number: 111, symbol: 'Rg', name: 'Roentgenium', mass: 280, category: 'transition-metal', group: 11, period: 7, config: '[Rn] 5f¹⁴ 6d⁹ 7s²', discovered: '1994', discoverer: 'GSI Helmholtz Centre', state: 'Solid', melt: null, boil: null, uses: ['Research', 'Scientific studies'] },
+            { number: 112, symbol: 'Cn', name: 'Copernicium', mass: 285, category: 'transition-metal', group: 12, period: 7, config: '[Rn] 5f¹⁴ 6d¹⁰ 7s²', discovered: '1996', discoverer: 'GSI Helmholtz Centre', state: 'Solid', melt: null, boil: null, uses: ['Research', 'Scientific studies'] },
+            { number: 113, symbol: 'Nh', name: 'Nihonium', mass: 284, category: 'post-transition', group: 13, period: 7, config: '[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p¹', discovered: '2003', discoverer: 'RIKEN', state: 'Solid', melt: null, boil: null, uses: ['Research', 'Scientific studies'] },
+            { number: 114, symbol: 'Fl', name: 'Flerovium', mass: 289, category: 'post-transition', group: 14, period: 7, config: '[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p²', discovered: '1998', discoverer: 'Joint Institute', state: 'Solid', melt: null, boil: null, uses: ['Research', 'Scientific studies'] },
+            { number: 115, symbol: 'Mc', name: 'Moscovium', mass: 288, category: 'post-transition', group: 15, period: 7, config: '[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p³', discovered: '2003', discoverer: 'Joint Institute', state: 'Solid', melt: null, boil: null, uses: ['Research', 'Scientific studies'] },
+            { number: 116, symbol: 'Lv', name: 'Livermorium', mass: 293, category: 'post-transition', group: 16, period: 7, config: '[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁴', discovered: '2000', discoverer: 'Joint Institute', state: 'Solid', melt: null, boil: null, uses: ['Research', 'Scientific studies'] },
+            { number: 117, symbol: 'Ts', name: 'Tennessine', mass: 294, category: 'halogen', group: 17, period: 7, config: '[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁵', discovered: '2010', discoverer: 'Joint Institute', state: 'Solid', melt: null, boil: null, uses: ['Research', 'Scientific studies'] },
+            { number: 118, symbol: 'Og', name: 'Oganesson', mass: 294, category: 'noble-gas', group: 18, period: 7, config: '[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁶', discovered: '2002', discoverer: 'Joint Institute', state: 'Gas', melt: null, boil: null, uses: ['Research', 'Scientific studies'] }
+        ];
+
+        const categories = {
+            'alkali-metal': { name: 'Alkali Metals', color: 'var(--alkali)' },
+            'alkaline-earth': { name: 'Alkaline Earth', color: 'var(--alkaline)' },
+            'transition-metal': { name: 'Transition Metals', color: 'var(--transition)' },
+            'post-transition': { name: 'Post-transition', color: 'var(--post)' },
+            'metalloid': { name: 'Metalloids', color: 'var(--metalloid)' },
+            'nonmetal': { name: 'Non-metals', color: 'var(--nonmetal)' },
+            'halogen': { name: 'Halogens', color: 'var(--halogen)' },
+            'noble-gas': { name: 'Noble Gases', color: 'var(--noble)' },
+            'lanthanide': { name: 'Lanthanides', color: 'var(--lanthanide)' },
+            'actinide': { name: 'Actinides', color: 'var(--actinide)' }
+        };
+
+        function renderLegend() {
+            const legend = document.getElementById('legend');
+            legend.innerHTML = Object.entries(categories).map(([key, cat]) => `
+                <div class="legend-item">
+                    <div class="legend-color" style="background: ${cat.color}"></div>
+                    <span>${cat.name}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderTable() {
+            const table = document.getElementById('periodicTable');
+            const grid = [];
+            
+            for (let i = 0; i < 10; i++) {
+                grid[i] = new Array(18).fill(null);
+            }
+
+            elements.forEach(el => {
+                const row = el.period - 1;
+                let col = el.group - 1;
+                
+                if (el.category === 'lanthanide') {
+                    // Lanthanides go in row 8, columns based on atomic number
+                    grid[8][el.number - 57] = el;
+                } else if (el.category === 'actinide') {
+                    // Actinides go in row 9, columns based on atomic number
+                    grid[9][el.number - 89] = el;
+                } else {
+                    grid[row][col] = el;
+                }
+            });
+
+            table.innerHTML = '';
+            grid.forEach((row, rowIndex) => {
+                if (rowIndex === 7) {
+                    table.innerHTML += '<div class="series-separator"></div>';
+                }
+                
+                row.forEach((el) => {
+                    if (el) {
+                        table.innerHTML += `
+                            <div class="element ${el.category}" data-number="${el.number}" onclick="showElementDetails(${el.number})">
+                                <div class="atomic-number">${el.number}</div>
+                                <div class="element-symbol">${el.symbol}</div>
+                                <div class="element-name">${el.name}</div>
+                                <div class="atomic-mass">${el.mass}</div>
+                            </div>
+                        `;
+                    } else {
+                        table.innerHTML += '<div class="element empty"></div>';
+                    }
+                });
+            });
+
+            // Staggered reveal animation
+            setTimeout(() => {
+                document.querySelectorAll('.element:not(.empty)').forEach((el, index) => {
+                    setTimeout(() => {
+                        el.classList.add('revealed');
+                    }, index * 15);
+                });
+            }, 100);
+            
+            // Update element count
+            const totalElements = document.querySelectorAll('.element:not(.empty)').length;
+            const countDisplay = document.getElementById('elementCount');
+            if (countDisplay) {
+                countDisplay.textContent = totalElements;
+                countDisplay.style.color = totalElements === 118 ? 'var(--flame-copper)' : 'var(--flame-strontium)';
+            }
+            console.log('Total elements rendered:', totalElements);
+        }
+
+        function showElementDetails(number) {
+            const el = elements.find(e => e.number === number);
+            if (!el) return;
+
+            const modal = document.getElementById('modalOverlay');
+            const header = document.getElementById('modalHeader');
+            const body = document.getElementById('modalBody');
+
+            header.innerHTML = `
+                <div class="modal-element-symbol ${el.category}">
+                    <div class="modal-element-number">${el.number}</div>
+                    ${el.symbol}
+                </div>
+                <div class="modal-element-info">
+                    <h2>${el.name}</h2>
+                    <div class="modal-element-category">${categories[el.category].name}</div>
+                    <div class="modal-quick-facts">
+                        <div class="quick-fact">
+                            <div class="quick-fact-label">Atomic Mass</div>
+                            <div class="quick-fact-value">${el.mass}</div>
+                        </div>
+                        <div class="quick-fact">
+                            <div class="quick-fact-label">State</div>
+                            <div class="quick-fact-value">${el.state}</div>
+                        </div>
+                        <div class="quick-fact">
+                            <div class="quick-fact-label">Group</div>
+                            <div class="quick-fact-value">${el.group}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            body.innerHTML = `
+                <div class="info-section">
+                    <h3>⚛️ Electron Configuration</h3>
+                    <div class="electron-config">${el.config}</div>
+                </div>
+
+                <div class="info-section">
+                    <h3>🔬 Properties</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">Melting Point</div>
+                            <div class="info-value">${el.melt !== null ? el.melt + ' °C' : 'Unknown'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Boiling Point</div>
+                            <div class="info-value">${el.boil !== null ? el.boil + ' °C' : 'Unknown'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Period</div>
+                            <div class="info-value">${el.period}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Category</div>
+                            <div class="info-value">${categories[el.category].name}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <h3>📚 Discovery</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">Discovered</div>
+                            <div class="info-value">${el.discovered}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Discoverer</div>
+                            <div class="info-value">${el.discoverer}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <h3>🔧 Common Uses</h3>
+                    <ul class="uses-list">
+                        ${el.uses.map(use => `<li>${use}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('active');
+        }
+
+        function filterCategory(type) {
+            const allElements = document.querySelectorAll('.element:not(.empty)');
+            const buttons = document.querySelectorAll('.filter-btn');
+            
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            allElements.forEach(el => {
+                if (type === 'all') {
+                    el.style.display = 'flex';
+                } else if (type === 'metal') {
+                    const isMetal = el.classList.contains('alkali-metal') || 
+                                   el.classList.contains('alkaline-earth') || 
+                                   el.classList.contains('transition-metal') ||
+                                   el.classList.contains('post-transition');
+                    el.style.display = isMetal ? 'flex' : 'none';
+                } else if (type === 'nonmetal') {
+                    const isNonMetal = el.classList.contains('nonmetal') || 
+                                      el.classList.contains('halogen') || 
+                                      el.classList.contains('noble-gas');
+                    el.style.display = isNonMetal ? 'flex' : 'none';
+                } else if (type === 'metalloid') {
+                    el.style.display = el.classList.contains('metalloid') ? 'flex' : 'none';
+                }
+            });
+        }
+
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            const allElements = document.querySelectorAll('.element:not(.empty)');
+
+            if (!query) {
+                // If search is empty, show all elements
+                allElements.forEach(el => {
+                    el.style.display = 'flex';
+                });
+                return;
+            }
+
+            allElements.forEach(el => {
+                const number = parseInt(el.getAttribute('data-number'));
+                const element = elements.find(e => e.number === number);
+                
+                if (element) {
+                    const matches = element.name.toLowerCase().includes(query) ||
+                                  element.symbol.toLowerCase().includes(query) ||
+                                  element.number.toString() === query ||
+                                  element.category.toLowerCase().includes(query);
+                    el.style.display = matches ? 'flex' : 'none';
+                }
+            });
+        });
+
+        renderLegend();
+        renderTable();
+    </script>
+</body>
+</html>
