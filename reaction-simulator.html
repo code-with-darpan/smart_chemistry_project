@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reaction Simulator - ChemLab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* Reaction Simulator Specific Styles */
+        .simulator-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        .simulator-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            padding: 48px;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .simulator-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--flame-lithium), var(--flame-sodium), var(--flame-copper), var(--flame-potassium));
+        }
+
+        .simulator-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .simulator-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .simulator-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            background: var(--transition);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .simulator-subtitle {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+
+        .chemical-inputs {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 24px;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .chemical-select-wrapper {
+            position: relative;
+        }
+
+        .chemical-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .plus-sign {
+            font-family: 'Syne', sans-serif;
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--accent-primary);
+            text-align: center;
+            padding-top: 28px;
+        }
+
+        .react-btn {
+            width: 100%;
+            padding: 20px 40px;
+            font-family: 'Syne', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, #ff006e 0%, #fb5607 50%, #ffbe0b 100%);
+            border: none;
+            border-radius: 16px;
+            color: white;
+            cursor: pointer;
+            transition: var(--transition-bounce);
+            box-shadow: 0 8px 32px rgba(255, 0, 110, 0.3);
+        }
+
+        .react-btn:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 12px 40px rgba(255, 0, 110, 0.4);
+        }
+
+        .react-btn:active {
+            transform: translateY(-2px) scale(0.98);
+        }
+
+        /* Result Display */
+        .result-container {
+            margin-top: 40px;
+            display: none;
+            animation: slideUp 0.5s ease;
+        }
+
+        .result-container.active {
+            display: block;
+        }
+
+        .result-box {
+            background: var(--bg-primary);
+            border-radius: 20px;
+            padding: 32px;
+            border: 2px solid var(--border);
+        }
+
+        .result-box.safe {
+            border-color: rgba(34, 197, 94, 0.5);
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, var(--bg-primary) 100%);
+        }
+
+        .result-box.warning {
+            border-color: rgba(251, 191, 36, 0.5);
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, var(--bg-primary) 100%);
+        }
+
+        .result-box.danger {
+            border-color: rgba(239, 68, 68, 0.5);
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, var(--bg-primary) 100%);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .result-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .risk-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .risk-badge.safe {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.4);
+        }
+
+        .risk-badge.warning {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.4);
+        }
+
+        .risk-badge.danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+
+        .reaction-equation {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            padding: 24px;
+            background: rgba(44, 43, 43, 0.3);
+            border-radius: 12px;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+            letter-spacing: 1px;
+        }
+
+        .reaction-message {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 20px;
+            background: rgba(22, 22, 22, 0.2);
+            border-radius: 12px;
+            font-size: 15px;
+            line-height: 1.7;
+            color: var(--text-secondary);
+        }
+
+        .reaction-message .icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        /* Safety Tips Section */
+        .safety-section {
+            margin-top: 60px;
+            padding-top: 60px;
+            border-top: 1px solid var(--border);
+        }
+
+        .safety-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 28px;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 32px;
+            color: var(--accent-warning);
+        }
+
+        .safety-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+        }
+
+        .safety-card {
+            background: rgba(251, 191, 36, 0.05);
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .safety-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .safety-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Chemical List */
+        .chemicals-info {
+            margin-top: 60px;
+            padding: 32px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .chemicals-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .chemicals-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .chemical-tag {
+            padding: 8px 16px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: var(--transition-fast);
+        }
+
+        .chemical-tag:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        @media (max-width: 640px) {
+            .chemical-inputs {
+                grid-template-columns: 1fr;
+            }
+            
+            .plus-sign {
+                padding: 0;
+            }
+            
+            .simulator-card {
+                padding: 32px 24px;
+            }
+            
+            .reaction-equation {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="index.html" class="nav-brand">
+                <span class="nav-logo">⚗️ Digital Period Table</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                    </svg>
+                    Home
+                </a>
+                <a href="periodic-table.html" class="nav-link">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    Periodic Table
+                </a>
+                <a href="reaction-simulator.html" class="nav-link active">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 3h6v11l4.5 7H4.5L9 14V3z"></path>
+                        <path d="M8 3h8"></path>
+                    </svg>
+                    Reactions
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="simulator-container">
+        <header style="text-align: center; margin-bottom: 48px;">
+            <h1 class="page-title" style="font-size: clamp(36px, 8vw, 56px);">Reaction Simulator</h1>
+            <p class="page-subtitle" style="margin-bottom: 0;">Discover what happens when chemicals meet</p>
+        </header>
+
+        <div class="simulator-card">
+            <div class="simulator-header">
+                <div class="simulator-icon">🧪</div>
+                <h2 class="simulator-title">Mix Chemicals</h2>
+                <p class="simulator-subtitle">Select two chemicals to see their reaction</p>
+            </div>
+
+            <div class="chemical-inputs">
+                <div class="chemical-select-wrapper">
+                    <label class="chemical-label">Chemical 1</label>
+                    <select id="chem1" class="select">
+                        <option value="">Select Chemical...</option>
+                    </select>
+                </div>
+                
+                <div class="plus-sign">+</div>
+                
+                <div class="chemical-select-wrapper">
+                    <label class="chemical-label">Chemical 2</label>
+                    <select id="chem2" class="select">
+                        <option value="">Select Chemical...</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="react-btn" onclick="checkReaction()">
+                ⚡ Check Reaction
+            </button>
+
+            <div class="result-container" id="resultContainer">
+                <div class="result-box" id="resultBox">
+                    <div class="result-header">
+                        <span class="result-label">Reaction Result</span>
+                        <span class="risk-badge" id="riskBadge"></span>
+                    </div>
+                    <div class="reaction-equation" id="reactionEquation"></div>
+                    <div class="reaction-message" id="reactionMessage">
+                        <span class="icon">ℹ️</span>
+                        <span id="messageText"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Safety Tips -->
+        <div class="safety-section">
+            <h3 class="safety-title">⚠️ Laboratory Safety Tips</h3>
+            <div class="safety-grid">
+                <div class="safety-card">
+                    <div class="safety-icon">🥽</div>
+                    <p class="safety-text">Always wear safety goggles and protective equipment when handling chemicals</p>
+                </div>
+                <div class="safety-card">
+                    <div class="safety-icon">🧤</div>
+                    <p class="safety-text">Use appropriate gloves to protect your hands from corrosive substances</p>
+                </div>
+                <div class="safety-card">
+                    <div class="safety-icon">🌬️</div>
+                    <p class="safety-text">Work in well-ventilated areas or use fume hoods when handling volatile chemicals</p>
+                </div>
+                <div class="safety-card">
+                    <div class="safety-icon">🚫</div>
+                    <p class="safety-text">Never mix unknown chemicals - some combinations can be explosive or toxic</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Available Chemicals -->
+        <div class="chemicals-info">
+            <h4 class="chemicals-title">Available Chemicals</h4>
+            <div class="chemicals-list" id="chemicalsList"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>Built with ❤️ for chemistry enthusiasts • <span class="footer-brand">ChemLab</span> Interactive Learning Platform</p>
+    </footer>
+
+    <script>
+        // Chemical list
+        const chemicals = [
+            'HCl', 'NaOH', 'Na', 'H2O', 'Bleach', 'Cu', 'H2SO4', 'K', 'NH3', 'CaO',
+            'AgNO3', 'NaCl', 'Fe', 'O2', 'Zn', 'Mg', 'Na2CO3', 'Pb', 'Al', 'Fe2O3',
+            'Cl2', 'H2', 'CaCO3', 'Hg', 'C', 'CO', 'HNO3', 'KCl', 'H2O2', 'MnO2',
+            'NH4Cl', 'SO2'
+        ];
+
+        // Reaction rules database
+        const reactionRules = [
+            // Neutralization Reactions
+            { a: "HCl", b: "NaOH", reaction: "HCl + NaOH → NaCl + H₂O", risk: "safe",
+              message: "Neutralization reaction producing salt and water. This is a classic acid-base reaction used in titrations." },
+            
+            { a: "H2SO4", b: "NaOH", reaction: "H₂SO₄ + 2NaOH → Na₂SO₄ + 2H₂O", risk: "safe",
+              message: "Controlled neutralization reaction. Sulfuric acid is neutralized by sodium hydroxide." },
+
+            // Alkali Metals + Water (DANGEROUS)
+            { a: "Na", b: "H2O", reaction: "2Na + 2H₂O → 2NaOH + H₂↑", risk: "danger",
+              message: "HIGHLY EXOTHERMIC! Sodium reacts violently with water producing hydrogen gas which may ignite. Never perform without proper safety measures." },
+            
+            { a: "K", b: "H2O", reaction: "2K + 2H₂O → 2KOH + H₂↑", risk: "danger",
+              message: "VIOLENT REACTION! Potassium reacts even more vigorously than sodium. The hydrogen gas produced often ignites with a purple flame." },
+
+            // Dangerous Mixtures
+            { a: "Bleach", b: "HCl", reaction: "NaClO + 2HCl → Cl₂↑ + NaCl + H₂O", risk: "danger",
+              message: "EXTREMELY DANGEROUS! Releases toxic chlorine gas (Cl₂). This is a potentially lethal combination - NEVER MIX bleach and acids!" },
+            
+            { a: "Bleach", b: "NH3", reaction: "NaClO + 2NH₃ → N₂H₄ + NaCl + H₂O", risk: "danger",
+              message: "TOXIC! Can produce chloramine vapors and hydrazine. Both are extremely hazardous. Never mix bleach with ammonia-based cleaners!" },
+
+            // Metal + Acid Reactions
+            { a: "Zn", b: "HCl", reaction: "Zn + 2HCl → ZnCl₂ + H₂↑", risk: "danger",
+              message: "Hydrogen gas is released which is highly flammable. Common laboratory reaction for hydrogen generation." },
+            
+            { a: "Fe", b: "HCl", reaction: "Fe + 2HCl → FeCl₂ + H₂↑", risk: "danger",
+              message: "Iron dissolves in hydrochloric acid releasing hydrogen gas. The solution turns green due to iron(II) chloride." },
+            
+            { a: "Mg", b: "HCl", reaction: "Mg + 2HCl → MgCl₂ + H₂↑", risk: "danger",
+              message: "Vigorous reaction! Magnesium reacts rapidly with acid producing hydrogen gas and heat." },
+            
+            { a: "Cu", b: "HNO3", reaction: "Cu + 4HNO₃ → Cu(NO₃)₂ + 2NO₂↑ + 2H₂O", risk: "danger",
+              message: "TOXIC! Produces brown nitrogen dioxide gas (NO₂) which is a severe respiratory irritant. Perform only in fume hood." },
+
+            // Combustion Reactions
+            { a: "H2", b: "O2", reaction: "2H₂ + O₂ → 2H₂O", risk: "danger",
+              message: "EXPLOSIVE when ignited! This is the famous 'squeaky pop' test for hydrogen. Hydrogen-oxygen mixtures are highly explosive." },
+            
+            { a: "Mg", b: "O2", reaction: "2Mg + O₂ → 2MgO", risk: "danger",
+              message: "Burns with an INTENSE WHITE FLAME that can cause eye damage. The light is so bright it was used in early photography." },
+            
+            { a: "C", b: "O2", reaction: "C + O₂ → CO₂", risk: "danger",
+              message: "Combustion of carbon. This is the basic reaction in burning coal, charcoal, and organic matter." },
+            
+            { a: "CO", b: "O2", reaction: "2CO + O₂ → 2CO₂", risk: "danger",
+              message: "Carbon monoxide combustion. CO is highly toxic (odorless poison) - ensure proper ventilation." },
+            
+            { a: "Na", b: "O2", reaction: "4Na + O₂ → 2Na₂O", risk: "danger",
+              message: "Rapid oxidation! Sodium tarnishes quickly in air and can ignite. Store sodium under oil." },
+
+            // Precipitation Reactions
+            { a: "AgNO3", b: "NaCl", reaction: "AgNO₃ + NaCl → AgCl↓ + NaNO₃", risk: "safe",
+              message: "White precipitate of silver chloride forms. This reaction is used to test for chloride ions." },
+            
+            { a: "AgNO3", b: "KCl", reaction: "AgNO₃ + KCl → AgCl↓ + KNO₃", risk: "safe",
+              message: "White curdy precipitate of silver chloride. The precipitate turns purple-grey when exposed to light." },
+
+            // Carbonate + Acid
+            { a: "Na2CO3", b: "HCl", reaction: "Na₂CO₃ + 2HCl → 2NaCl + H₂O + CO₂↑", risk: "safe",
+              message: "Effervescence! Carbon dioxide gas is released causing bubbling. Classic acid-carbonate reaction." },
+            
+            { a: "CaCO3", b: "HCl", reaction: "CaCO₃ + 2HCl → CaCl₂ + H₂O + CO₂↑", risk: "safe",
+              message: "Limestone dissolves with effervescence. This is how caves form naturally and how antacids work." },
+
+            // Thermite Reaction
+            { a: "Al", b: "Fe2O3", reaction: "2Al + Fe₂O₃ → Al₂O₃ + 2Fe", risk: "danger",
+              message: "EXTREME HEAT! Thermite reaction produces molten iron at ~2500°C. Used for welding railway tracks. NEVER attempt without professional supervision!" },
+
+            // Quicklime Reaction
+            { a: "CaO", b: "H2O", reaction: "CaO + H₂O → Ca(OH)₂", risk: "danger",
+              message: "VERY EXOTHERMIC! Quicklime releases significant heat when mixed with water. Can cause severe burns. Handle with extreme care." },
+
+            // Ammonia Reactions
+            { a: "NH3", b: "HCl", reaction: "NH₃ + HCl → NH₄Cl", risk: "safe",
+              message: "White fumes of ammonium chloride form. This is a beautiful demonstration of gas-phase acid-base reaction." },
+            
+            { a: "NH4Cl", b: "NaOH", reaction: "NH₄Cl + NaOH → NH₃↑ + NaCl + H₂O", risk: "safe",
+              message: "Ammonia gas released - pungent smell! This is the standard laboratory method for generating ammonia." },
+
+            // Oxidation/Rusting
+            { a: "Fe", b: "O2", reaction: "4Fe + 3O₂ → 2Fe₂O₃", risk: "safe",
+              message: "Slow rusting process. In presence of water and oxygen, iron oxidizes to form rust over time." },
+
+            // Halogen Reactions
+            { a: "Na", b: "Cl2", reaction: "2Na + Cl₂ → 2NaCl", risk: "danger",
+              message: "HIGHLY REACTIVE! Sodium burns vigorously in chlorine gas with a bright yellow flame forming table salt." },
+
+            // Hydrogen Peroxide Decomposition
+            { a: "H2O2", b: "MnO2", reaction: "2H₂O₂ → 2H₂O + O₂↑", risk: "warning",
+              message: "Catalytic decomposition! MnO₂ acts as a catalyst causing rapid oxygen release. Used in 'elephant toothpaste' demonstrations." },
+
+            // Aluminum + Base
+            { a: "Al", b: "NaOH", reaction: "2Al + 2NaOH + 6H₂O → 2NaAl(OH)₄ + 3H₂↑", risk: "danger",
+              message: "Hydrogen gas evolved! Aluminum is amphoteric and reacts with both acids and bases. The reaction is exothermic." },
+
+            // SO2 + Water
+            { a: "SO2", b: "H2O", reaction: "SO₂ + H₂O → H₂SO₃", risk: "danger",
+              message: "Forms sulfurous acid - a respiratory irritant. This reaction contributes to acid rain formation." },
+
+            // No Reaction Cases
+            { a: "Cu", b: "H2O", reaction: "No Reaction", risk: "safe",
+              message: "Copper is below hydrogen in the reactivity series and does not react with water under normal conditions." },
+            
+            { a: "Hg", b: "H2O", reaction: "No Reaction", risk: "safe",
+              message: "Mercury does not react with water. However, mercury vapor is highly toxic - avoid exposure!" },
+            
+            { a: "NaCl", b: "H2O", reaction: "NaCl → Na⁺(aq) + Cl⁻(aq)", risk: "safe",
+              message: "Dissolution only - no chemical reaction. Salt dissociates into ions when dissolved in water." },
+            
+            { a: "Pb", b: "HCl", reaction: "Pb + 2HCl → PbCl₂ + H₂↑ (very slow)", risk: "safe",
+              message: "Very slow reaction. Lead chloride forms a protective layer that inhibits further reaction." },
+
+            // Same chemical
+            { a: "HCl", b: "HCl", reaction: "No Reaction", risk: "safe",
+              message: "Same chemicals do not react with each other under normal conditions." },
+            { a: "NaOH", b: "NaOH", reaction: "No Reaction", risk: "safe",
+              message: "Same chemicals do not react with each other under normal conditions." },
+            { a: "H2O", b: "H2O", reaction: "No Reaction", risk: "safe",
+              message: "Same chemicals do not react with each other under normal conditions." }
+        ];
+
+        // Populate dropdowns
+        function populateDropdowns() {
+            const chem1 = document.getElementById('chem1');
+            const chem2 = document.getElementById('chem2');
+            const chemList = document.getElementById('chemicalsList');
+            
+            chemicals.forEach(chem => {
+                chem1.innerHTML += `<option value="${chem}">${chem}</option>`;
+                chem2.innerHTML += `<option value="${chem}">${chem}</option>`;
+                chemList.innerHTML += `<span class="chemical-tag">${chem}</span>`;
+            });
+        }
+
+        // Check reaction
+        function checkReaction() {
+            const c1 = document.getElementById('chem1').value;
+            const c2 = document.getElementById('chem2').value;
+            const resultContainer = document.getElementById('resultContainer');
+            const resultBox = document.getElementById('resultBox');
+            const riskBadge = document.getElementById('riskBadge');
+            const equation = document.getElementById('reactionEquation');
+            const messageText = document.getElementById('messageText');
+            const messageIcon = document.querySelector('.reaction-message .icon');
+
+            if (!c1 || !c2) {
+                alert('Please select both chemicals to see their reaction!');
+                return;
+            }
+
+            // Find matching reaction
+            let found = null;
+            for (let rule of reactionRules) {
+                if ((rule.a === c1 && rule.b === c2) || (rule.a === c2 && rule.b === c1)) {
+                    found = rule;
+                    break;
+                }
+            }
+
+            // Display result
+            resultContainer.classList.add('active');
+            resultBox.className = 'result-box';
+
+            if (found) {
+                resultBox.classList.add(found.risk);
+                riskBadge.className = `risk-badge ${found.risk}`;
+                
+                const riskLabels = {
+                    safe: '✓ Safe',
+                    warning: '⚠ Caution',
+                    danger: '☠ Dangerous'
+                };
+                
+                const icons = {
+                    safe: '✅',
+                    warning: '⚠️',
+                    danger: '🚨'
+                };
+                
+                riskBadge.textContent = riskLabels[found.risk];
+                equation.textContent = found.reaction;
+                messageText.textContent = found.message;
+                messageIcon.textContent = icons[found.risk];
+            } else {
+                resultBox.classList.add('warning');
+                riskBadge.className = 'risk-badge warning';
+                riskBadge.textContent = '? Unknown';
+                equation.textContent = `${c1} + ${c2} → ?`;
+                messageText.textContent = 'This reaction is not in our database. Always research chemical reactions thoroughly before attempting them in a laboratory setting.';
+                messageIcon.textContent = '❓';
+            }
+
+            // Scroll to result
+            resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Initialize
+        populateDropdowns();
+    </script>
+</body>
+</html>
